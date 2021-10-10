@@ -1,13 +1,13 @@
 {
-    "name": "robbert/php-components",
+    "name": "bucky24/php-components",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Robbert\\PhpComponents\\": "src/"
+            "Bucky24\\PhpComponents\\": "src/"
         },
         "files": [
-            "src/utils/autoLoad.php"
+            "src/PhpComponents/utils/autoLoad.php"
         ]
     },
     "authors": [
