@@ -1,0 +1,17 @@
+{
+    "name": "robbert/php-components",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Robbert\\PhpComponents\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Bucky24",
+            "email": "rwijtman@gmail.com"
+        }
+    ],
+    "require": {}
+}
