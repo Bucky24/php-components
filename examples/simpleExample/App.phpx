@@ -1,0 +1,22 @@
+<?php
+
+class App extends Component {
+    function render() {
+        $baz = "boo";
+        return __JSX
+            <div key={$baz}>
+                foo "foo"
+                <div>
+                    hi there
+                </div>
+                <br />
+                <Button
+                    value="foo bar"
+                    bar={$baz === 0}
+                />
+            </div>
+        __JSX;
+    }
+}
+
+?>
