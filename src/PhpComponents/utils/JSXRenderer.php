@@ -24,6 +24,12 @@ class JSXRenderer {
             $component->postRender();
         } else if ($component instanceof JSXText) {
             $component->render();
+        } else if (is_array($component)) {
+            foreach ($component as $child) {
+                JSXRenderer::doRender($child);
+            }
+        } else {
+            print("Unexpected: " . var_export($component, true));
         }
     }
 }

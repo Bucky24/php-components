@@ -1,6 +1,6 @@
 <?php
 
-include_once("./utils/autoLoad.php");
+include_once(dirname(__FILE__) . "/../../src/PhpComponents/utils/autoLoad.php");
 
 initAutoload(array(
     dirname(__FILE__) . "/build",

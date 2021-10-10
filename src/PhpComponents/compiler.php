@@ -114,10 +114,18 @@ function processElements($elements, $parentTag = null) {
     while (count($elements) > 0) {
         $element = array_shift($elements);
         if ($element['tag'] === false) {
-            $tree[] = array(
-                "type" => "text",
-                "content" => $element['content'],
-            );
+            $content = $element['content'];
+            if ($content[0] === '{' && $content[strlen($content)-1] === '}') {
+                $tree[] = array(
+                    "type" => "code",
+                    "content" => $content,
+                );
+            } else {
+                $tree[] = array(
+                    "type" => "text",
+                    "content" => $element['content'],
+                );
+            }
         } else {
             $valueList = explode(" ", $element['content']);
             $newValues = array();
@@ -239,6 +247,14 @@ function buildElements($elements, $tabs = "\t") {
             $content = str_replace("\"", "&quot;", $content);
             $output .= "$tabs\t" . "new JSXText(\"" . $content . "\")";
             //print ("$index, $max\n");
+            if ($index < $max) {
+                $output .= ",";
+            }
+            $output .= "\n";
+        } else if ($element['type'] === 'code') {
+            $content = $element['content'];
+            $content = substr($content, 1, strlen($content)-2);
+            $output .= "$tabs\t" . $content;
             if ($index < $max) {
                 $output .= ",";
             }

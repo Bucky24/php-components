@@ -4,7 +4,7 @@ class App extends Component {
     function render() {
         $baz = "boo";
         return __JSX
-            <div key={$baz}>
+            <Container key={$baz}>
                 foo "foo"
                 <div>
                     hi there
@@ -14,7 +14,7 @@ class App extends Component {
                     value="foo bar"
                     bar={$baz === 0}
                 />
-            </div>
+            </Container>
         __JSX;
     }
 }
