@@ -5,7 +5,10 @@
     "autoload": {
         "psr-4": {
             "Robbert\\PhpComponents\\": "src/"
-        }
+        },
+        "files": [
+            "src/utils/autoLoad.php"
+        ]
     },
     "authors": [
         {
