@@ -28,6 +28,8 @@ class JSXRenderer {
             foreach ($component as $child) {
                 JSXRenderer::doRender($child);
             }
+        } else if (gettype($component) === "string") { 
+            print $component;
         } else {
             print("Unexpected: " . var_export($component, true));
         }
