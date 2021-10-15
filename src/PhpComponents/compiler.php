@@ -2,36 +2,48 @@
 
 $options = getopt("", array(
     "file:",
+    "dir:",
     "buildDir:",
 ));
 
-if (!array_key_exists("file", $options)) {
-    die("--file parameter is required");
+if (!array_key_exists("file", $options) && !array_key_exists("dir", $options)) {
+    die("one of --file or --dir parameters is required");
 }
 
 if (!array_key_exists("buildDir", $options)) {
     die("--buildDir parameter is required");
 }
 
-$file = $options['file'];
+$files = array();;
+if (array_key_exists("file", $options)) {
+    $files[] = $options['file'];
+}
+
+if (array_key_exists("dir", $options)) {
+    $dir = $options['dir'];
+    print("Getting files from $dir\n");
+
+    $dirFiles = scandir($dir);
+    //print_r($dirFiles);
+    foreach ($dirFiles as $dirFile) {
+        $fullPath = $dir . "/" . $dirFile;
+        if (is_dir($fullPath)) {
+            continue;
+        }
+        $fileList = explode(".", $dirFile);
+        $path = $fileList[count($fileList)-1];
+        if ($path !== "phpx") {
+            continue;
+        }
+        $files[] = $fullPath;
+    }
+}
+
 $buildDir = $options['buildDir'];
 
 if (!file_exists($buildDir)) {
     mkdir($buildDir);
 }
-
-$content = file_get_contents($file);
-
-$fileNameArray = explode(".", basename($file));
-
-unset($fileNameArray[count($fileNameArray)-1]);
-
-$newName = join(".", $fileNameArray) . ".php";
-$fullNewName = $buildDir . "/$newName";
-
-print "\nPrevious content:\n" . $content . "\n\n";
-
-$newContent = "";
 
 function isCharWhitespace($char) {
     return $char === " " || $char === "\n" || $char === "\t" || $char === "\r";
@@ -276,29 +288,45 @@ function processJSX($jsx) {
     return buildElements($elements);
 }
 
-$curContent = $content;
-$position = strpos($curContent, "__JSX");
-$inJSX = false;
-while ($position !== false) {
-    $between = substr($curContent, 0, $position);
-    //print("bewtween $between\n");
-    $curContent = substr($curContent, $position + 5);
-    if (!$inJSX) {
-        $newContent .= $between;
-    } else {
-        $newContent .= processJSX($between);
-    }
-    $inJSX = !$inJSX;
-    //print("cur content " . $curContent . "\n");
+
+foreach ($files as $file) {
+    $content = file_get_contents($file);
+    
+    $fileNameArray = explode(".", basename($file));
+    
+    unset($fileNameArray[count($fileNameArray)-1]);
+    
+    $newName = join(".", $fileNameArray) . ".php";
+    $fullNewName = $buildDir . "/$newName";
+    
+    print "\nPrevious content:\n" . $content . "\n\n";
+    
+    $newContent = "";
+
+    $curContent = $content;
     $position = strpos($curContent, "__JSX");
-    //print("after position " . $position . "\n");
+    $inJSX = false;
+    while ($position !== false) {
+        $between = substr($curContent, 0, $position);
+        //print("bewtween $between\n");
+        $curContent = substr($curContent, $position + 5);
+        if (!$inJSX) {
+            $newContent .= $between;
+        } else {
+            $newContent .= processJSX($between);
+        }
+        $inJSX = !$inJSX;
+        //print("cur content " . $curContent . "\n");
+        $position = strpos($curContent, "__JSX");
+        //print("after position " . $position . "\n");
+    }
+    $newContent .= $curContent;
+
+    //print("\nend\n");
+
+    print "\nCompiled:\n" . $newContent . "\n";
+
+    file_put_contents($fullNewName, $newContent);
 }
-$newContent .= $curContent;
-
-//print("\nend\n");
-
-print "\nCompiled:\n" . $newContent . "\n";
-
-file_put_contents($fullNewName, $newContent);
 
 ?>
