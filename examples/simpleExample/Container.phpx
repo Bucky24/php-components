@@ -1,7 +1,7 @@
 <?php
 
 function Container($params) {
-    if ($params['__end']) {
+    if (!$params['__end']) {
         ?>
             <div style="display: flex; flex-direction: center; align-items: center; width: 100%; height: 100%">
         <?php
