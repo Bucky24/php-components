@@ -1,11 +1,9 @@
 <?php
 
-class Button extends Component {
-    function render() {
-        ?>
-            <button><?php echo $this->value; ?></button>
-        <?php
-    }
+function Button($params) {
+    ?>
+        <button><?php echo $params['value']; ?></button>
+    <?php
 }
 
 ?>

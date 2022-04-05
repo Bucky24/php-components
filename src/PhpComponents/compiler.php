@@ -120,211 +120,178 @@ function processValues($values) {
     return $result;
 }
 
-function processElements($elements, $parentTag = null) {
-    $tree = array();
-
-    while (count($elements) > 0) {
-        $element = array_shift($elements);
-        if ($element['tag'] === false) {
-            $content = $element['content'];
-            if ($content[0] === '{' && $content[strlen($content)-1] === '}') {
-                $tree[] = array(
-                    "type" => "code",
-                    "content" => $content,
-                );
-            } else {
-                $tree[] = array(
-                    "type" => "text",
-                    "content" => $element['content'],
-                );
-            }
-        } else {
-            $valueList = explode(" ", $element['content']);
-            $newValues = array();
-            foreach ($valueList as $value) {
-                $value = trim($value);
-                if ($value !== "") {
-                    $newValues[] = $value;
-                }
-            }
-            $tag = array_shift($newValues);
-            $selfClosing = false;
-
-            if ($tag === "/" . $parentTag) {
-                // then we're done!
-                break;
-            }
-
-            if (count($newValues) > 0) {
-                $lastValue = array_pop($newValues);
-                if ($lastValue !== "/") {
-                    $newValues[] = $lastValue;
-                } else {
-                    $selfClosing = true;
-                }
-            }
-
-            $children = array();
-            if (!$selfClosing) {
-                $childResult = processElements($elements, $tag);
-                $elements = $childResult['elements'];
-                $children = $childResult['tree'];
-            }
-            //print_r($newValues);
-            $tree[] = array(
-                "type" => "element",
-                "tag" => $tag,
-                "children" => $children,
-                "attributes" => processValues(join(" ", $newValues)),
-                "self_closing" => $selfClosing,
-            );
-        }
-    }
-
-    return array(
-        "tree" => $tree,
-        "elements" => $elements,
-    );
-}
-
-function processTags($jsx) {
-    $elements = array();
-
+function generateTags($content) {
+    $tags = array();
     $inTag = false;
-    $content = "";
-    for ($i=0;$i<strlen($jsx);$i++) {
-        $char = $jsx[$i];
+    $tagBuffer = "";
+    for ($i=0;$i<strlen($content);$i+=1) {
+        $char = substr($content, $i, 1);
+        if ($char === '<' && !$inTag) {
+            if (strlen($tagBuffer) > 0) {
+                //print "Text! $tagBuffer\n";
+                $tags[] = array(
+                    "text" => $tagBuffer,
+                );
+            }
+            $inTag = true;
+            $tagBuffer = "";
+        }
 
-        if (!$inTag) {
-            if ($char === "<") {
-                $inTag = true;
-                $content = trim($content);
-                if ($content !== "") {
-                    $elements[] = array(
-                        "tag" => false,
-                        "content" => $content,
-                    );
+        //if ($inTag) {
+            $tagBuffer .= $char;
+            //print $char;
+        //}
+
+        if ($char === '>') {
+            //print "Tag is $tagBuffer\n";
+            $selfClosing = substr($tagBuffer, strlen($tagBuffer)-2, 1) === '/';
+            $endTag = substr($tagBuffer, 1, 1) === '/';
+            $phpTag = substr($tagBuffer, 1, 1) === '?';
+
+            $end = strlen($tagBuffer)-2;
+            $start = 1;
+            if ($selfClosing || $phpTag) {
+                $end -= 1;
+            }
+            if ($endTag) {
+                $start += 1;
+                $end -= 1;
+            }
+            $tagData = substr($tagBuffer, $start, $end);
+
+            //print $tagData . "\n";
+            
+            $tags[] = array(
+                "selfClosing" => $selfClosing,
+                "endTag" => $endTag,
+                "phpTag" => $phpTag,
+                "contents" => $tagData,
+            );
+
+            $tagBuffer = "";
+            $inTag = false;
+        }
+    }
+
+    return $tags;
+}
+
+function convertContent($content) {
+    global $allFilesCompiled;
+    //print "\nPrevious content:\n" . $content . "\n\n";
+
+    // convert to tags
+    $tags = generateTags($content);
+
+    $newContent = "";
+    foreach ($tags as $tagData) {
+        //print_r($tag);
+
+        if (array_key_exists("text", $tagData)) {
+            $replaced = preg_replace("/\{(.+)\}/", "<?php echo $1; ?>", $tagData['text']);
+            $newContent .= $replaced;
+        } else if (!$tagData['phpTag']) {
+            $contentData = preg_split("/\s/", $tagData['contents']);
+            $tag = array_shift($contentData);
+            $customTag = $tag !== strtolower($tag);
+
+            if ($customTag) {
+                $componentLocation = __DIR__ . "/components/$tag.php";
+                if (file_exists($componentLocation)) {
+                    $allFilesCompiled[] = $componentLocation;
                 }
-                $content = "";
+                if ($tagData['endTag']) {
+                    $newContent .= "<?php finishRender(\"$tag\"); ?>";
+                } else {
+                    $values = implode(" ", $contentData);
+
+                    $valueList = processValues($values);
+
+                    // now we need to process the values into a list
+
+                    $newContent .= "<?php startRender(\"$tag\"";
+                    if ($tagData['selfClosing']) {
+                        $newContent .= ", true";
+                    } else {
+                        $newContent .= ", false";
+                    }
+                    $newContent .= ", array(";
+                    if (count($valueList) > 0) {
+                        $newContent .= "\n";
+                        foreach ($valueList as $attr=>$value) {
+                            $newContent .= "\"$attr\" => $value,\n";
+                        }
+                    }
+                    $newContent .= ")); ?>";
+                }
             } else {
-                $content .= $char;
+                if ($tagData['endTag']) {
+                    $newContent .= "</";
+                } else {
+                    $newContent .= "<";
+                }
+                $newContent .= $tagData['contents'];
+                if ($tagData['selfClosing']) {
+                    $newContent .= " />";
+                } else {
+                    $newContent .= " >";
+                }
             }
         } else {
-            if ($char === ">") {
-                $content = trim($content);
-                $elements[] = array(
-                    "tag" => true,
-                    "content" => $content,
-                );
-                $inTag = false;
-                $content = "";
-            } else {
-                $content .= $char;
-            }
+            $newContent .= "<" . $tagData['contents'] . "?>";
         }
     }
 
-    return processElements($elements);
+    return $newContent;
 }
 
-function buildElements($elements, $tabs = "\t") {
-    $output = "$tabs" . "array(\n";
-
-    $max = count($elements);
-    foreach ($elements as $index=>$element) {
-        if ($element['type'] === 'element') {
-            if ($element['tag'] === strtolower($element['tag'])) {
-                $output .= "$tabs\tnew JSXElement(\n$tabs\t\t\"" . $element['tag'] . "\",\n";
-                $output .= "$tabs\t\t" . var_export($element['self_closing'], true) . ",\n";
-            } else {
-                $output .= "$tabs\tnew " . $element['tag'] . "(\n";
-            }
-            $output .= "$tabs\t\tarray(\n";
-            foreach ($element['attributes'] as $key=>$value) {
-                $output .= "$tabs\t\t\t\"$key\" => $value,\n";
-            }
-            $output .= "$tabs\t\t),\n";
-            if (count($element['children']) > 0) {
-                $output .= buildElements($element['children'], "$tabs\t\t") . "\n";
-            } else {
-                $output .= "$tabs\t\t" . "array()\n";
-            }
-            $output .= "$tabs\t)";
-            if ($index < $max) {
-                $output .= ",";
-            }
-            $output .= "\n";
-        } else if ($element['type'] === "text") {
-            $content = $element['content'];
-            $content = str_replace("\"", "&quot;", $content);
-            $output .= "$tabs\t" . "new JSXText(\"" . $content . "\")";
-            //print ("$index, $max\n");
-            if ($index < $max) {
-                $output .= ",";
-            }
-            $output .= "\n";
-        } else if ($element['type'] === 'code') {
-            $content = $element['content'];
-            $content = substr($content, 1, strlen($content)-2);
-            $output .= "$tabs\t" . $content;
-            if ($index < $max) {
-                $output .= ",";
-            }
-            $output .= "\n";
-        }
-    }
-
-    $output .= "$tabs)";
-
-    return $output;
-}
-
-function processJSX($jsx) {
-    //print("jsx $jsx\n");
-
-    $tags = processTags($jsx);
-    $elements = $tags['tree'];
-
-    return buildElements($elements);
-}
-
-
+$indexFile = null;
+$allFilesCompiled = array();
 foreach ($files as $file) {
+    if (strpos($file, "index.phpx") !== false) {
+        $indexFile = $file;
+        continue;
+    }
     $content = file_get_contents($file);
-    
+
     $fileNameArray = explode(".", basename($file));
-    
+
     unset($fileNameArray[count($fileNameArray)-1]);
     
     $newName = join(".", $fileNameArray) . ".php";
     $fullNewName = $buildDir . "/$newName";
     
-    print "\nPrevious content:\n" . $content . "\n\n";
+    $newContent = convertContent($content);
+
+    //print $newContent . "\n";
+
+    file_put_contents($fullNewName, $newContent);
+    $allFilesCompiled[] = $fullNewName;
+}
+
+if ($indexFile) {
+    // we need to add some crap in here
+    $content = file_get_contents($file);
+
+    $fileNameArray = explode(".", basename($file));
+
+    unset($fileNameArray[count($fileNameArray)-1]);
     
-    $newContent = "";
+    $newName = join(".", $fileNameArray) . ".php";
+    $fullNewName = $buildDir . "/$newName";
+    
+    $newContent = convertContent($content);
 
-    $curContent = $content;
-    $position = strpos($curContent, "__JSX");
-    $inJSX = false;
-    while ($position !== false) {
-        $between = substr($curContent, 0, $position);
-        //print("bewtween $between\n");
-        $curContent = substr($curContent, $position + 5);
-        if (!$inJSX) {
-            $newContent .= $between;
-        } else {
-            $newContent .= processJSX($between);
-        }
-        $inJSX = !$inJSX;
-        //print("cur content " . $curContent . "\n");
-        $position = strpos($curContent, "__JSX");
-        //print("after position " . $position . "\n");
+    $dir = __DIR__;
+
+    $header = "<?php\n\tinclude_once(\"$dir/base/loader.php\");\n";
+
+    foreach ($allFilesCompiled as $file) {
+        $header .= "\tinclude_once(\"$file\");\n";
     }
-    $newContent .= $curContent;
 
-    //print("\nend\n");
-
-    print "\nCompiled:\n" . $newContent . "\n";
+    $header .= "?>\n";
+    $newContent = $header . $newContent;
 
     file_put_contents($fullNewName, $newContent);
 }

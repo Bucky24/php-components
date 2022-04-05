@@ -1,3 +1,3 @@
 const serve = require("@bucky24/node-php");
 
-serve(__dirname, 90);
+serve(path.resolve(__dirname, "build"), 90);

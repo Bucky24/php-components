@@ -17,4 +17,6 @@ function initAutoload($componentDirectories = array()) {
     });
 }
 
+include_once(dirname(__FILE__) . "/../base/loader.php");
+
 ?>

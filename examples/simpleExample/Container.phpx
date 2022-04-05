@@ -1,14 +1,14 @@
 <?php
 
-class Container extends Component {
-    function render() {
-        return __JSX
-            <div style="display: flex; flex-direction: center; align-items: center; width: 100%;
-            height: 100%">
-                {$this->children}
+function Container($params) {
+    if ($params['__end']) {
+        ?>
+            <div style="display: flex; flex-direction: center; align-items: center; width: 100%; height: 100%">
+        <?php
+    } else {
+        ?>
             </div>
-        __JSX;
+        <?php
     }
 }
-
 ?>
