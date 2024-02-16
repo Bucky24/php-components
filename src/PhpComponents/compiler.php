@@ -130,6 +130,7 @@ function generateTags($content) {
             if (strlen($tagBuffer) > 0) {
                 //print "Text! $tagBuffer\n";
                 $tags[] = array(
+                    "type" => "text",
                     "text" => $tagBuffer,
                 );
             }
@@ -159,13 +160,18 @@ function generateTags($content) {
             }
             $tagData = substr($tagBuffer, $start, $end);
 
+            $tagDataList = preg_split('/\s+/', $tagData);
+            $tag = $tagDataList[0];
+
             //print $tagData . "\n";
             
             $tags[] = array(
+                "type" => "tag",
                 "selfClosing" => $selfClosing,
                 "endTag" => $endTag,
                 "phpTag" => $phpTag,
                 "contents" => $tagData,
+                "tag" => $tag,
             );
 
             $tagBuffer = "";
@@ -176,6 +182,177 @@ function generateTags($content) {
     return $tags;
 }
 
+function getStackData($tag) {
+    if ($tag['type'] === 'tag') {
+        return array(
+            "type" => $tag['type'],
+            "tag" => $tag['tag'],
+            "selfClosing" => $tag['selfClosing'],
+            "endTag" => $tag['endTag'],
+            "children" => array(),
+            "originalData" => $tag,
+        );
+    } else {
+        return $tag;
+    }
+}
+
+$DO_LOG = false;
+
+function debugLog($message) {
+    global $DO_LOG;
+
+    if ($DO_LOG) {
+        print $message . "\n";
+    }
+}
+
+function debugLog_r($obj) {
+    global $DO_LOG;
+
+    if ($DO_LOG) {
+        print_r($message);
+    }
+}
+
+function buildTree($tags) {
+    $tag_stack = array();
+    $tree = array();
+
+    foreach ($tags as $tag) {
+        // ignore only whitespace
+        if ($tag['type'] === 'text' && preg_replace('/\s+/', '', $tag['text']) === "") {
+            continue;
+        }
+
+        $top_of_stack = null;
+        $stack_count = count($tag_stack)-1;
+        if (count($tag_stack) > 0) $top_of_stack = $tag_stack[$stack_count];
+
+        $top_log = $top_of_stack === null ? 'NONE' : $top_of_stack['tag'];
+        $count_of_stack = count($tag_stack);
+        $tag_log = $tag['type'] === 'tag' ? "Tag {$tag['tag']} end: " . var_export($tag['endTag'], true) : $tag['type'];
+
+        debugLog("$top_log => $tag_log on stack is $count_of_stack elems");
+
+        $immediate_push = $tag['type'] !== 'tag' || $tag['selfClosing'] || $tag['phpTag'];
+
+        // if there is no top, then no stack
+        if (!$top_of_stack) {
+            if ($immediate_push) {
+                // self closing or non tag goes right on the tree
+                $tree[] =getStackData($tag);
+            } else {
+                debugLog("pushing onto stack as first element");
+                // otherwise push it onto the stack as the first element
+                $tag_stack[] = getStackData($tag);
+            }
+            continue;
+        }
+
+        // if the tag doesn't match or is not a tag at all
+        if ($tag['type'] !== 'tag' || $tag['tag'] !== $top_of_stack['tag']) {
+            if ($immediate_push) {
+                // self closing or non-tag becomes a child of the top
+                $tag_stack[$stack_count]['children'][] = getStackData($tag);
+            } else {
+                debugLog("Pushing to stack as new entry");
+                // otherwise it's a new entry on the stack
+                $tag_stack[] = getStackData($tag);
+            }
+        } else if ($tag['endTag']) {
+            // if end tag and tag matches, then pop as a child of the new top
+            $old_top = array_pop($tag_stack);
+
+            debugLog("Popping tag");
+            
+            if (count($tag_stack) > 0) {
+                debugLog("Pushing to stack as child of previous entry");
+                $tag_stack[count($tag_stack)-1]['children'][] = $old_top;
+            } else {
+                debugLog("Pushing to tree");
+                // if there is nothing else, push onto the tree
+                $tree[] = $old_top;
+            }
+        } else {
+            // in this case we also have to push 
+            if ($immediate_push) {
+                debugLog("Pushing to stack as child");
+                // self closing or non-tag becomes a child of the top
+                $tag_stack[$stack_count]['children'][] = getStackData($tag);
+            } else {
+                debugLog("Pushing to stack");
+                // otherwise it's a new entry on the stack
+                $tag_stack[] = getStackData($tag);
+            }
+        }
+    }
+
+    debugLog_r($tree);
+    return $tree;
+}
+
+function buildFromTag($tag, $levels = 1) {
+    $indent = str_repeat("\t", $levels + 1);
+    $endIndent = str_repeat("\t", $levels);
+    if ($tag['type'] === 'tag') {
+        if ($tag['originalData']['phpTag']) {
+            $withoutTag = substr($tag['originalData']['contents'], 4);
+            return $withoutTag;
+        } else {
+            $childContentsList = array();
+            foreach ($tag['children'] as $child) {
+                $childContentsList[] = $indent . "\t" . buildFromTag($child, $levels+2);
+            }
+            $childContents = implode(",\n", $childContentsList);
+
+            $contentData = preg_split("/\s/", $tag['originalData']['contents']);
+            array_shift($contentData);
+            $values = implode(" ", $contentData);
+
+            $valueList = processValues($values);
+
+            $newContent = "renderComponent(\n$indent\"{$tag['tag']}\"";
+            if ($tag['selfClosing']) {
+                $newContent .= ",\n$indent" . "true";
+            } else {
+                $newContent .= ",\n$indent" . "false";
+            }
+            $newContent .= ",\n$indent" . "array(";
+            if (count($valueList) > 1) {
+                $newContent .= "\n";
+                foreach ($valueList as $attr=>$value) {
+                    $newContent .= "$indent\t\"$attr\" => $value,\n";
+                }
+                $newContent .= "$indent),\n";
+            } else {
+                $newContent .= "),\n";
+            }
+
+            if (count($childContentsList) > 0) {
+                $newContent .= "$indent" . "array(\n";
+                $newContent .= $childContents;
+                $newContent .= "\n$indent),";
+            } else {
+                $newContent .= "$indent" . "array(),";
+            }
+            $newContent .= "\n$endIndent)";
+
+            if ($levels === 1) {
+                $newContent = "return $newContent;";
+            }
+
+            return $newContent;
+        }
+    } else if ($tag['type'] === 'text') {
+        $textHandled = str_replace("\"", "&dbquot;", $tag['text']);
+        $textHandled = trim($textHandled);
+        return "renderText(\"$textHandled\")";
+    }
+
+    throw new Error("Unhandled tag " . json_encode($tag, true));
+}
+
 function convertContent($content) {
     global $allFilesCompiled;
     //print "\nPrevious content:\n" . $content . "\n\n";
@@ -183,63 +360,12 @@ function convertContent($content) {
     // convert to tags
     $tags = generateTags($content);
 
+    $tag_tree = buildTree($tags);
+
+
     $newContent = "";
-    foreach ($tags as $tagData) {
-        //print_r($tag);
-
-        if (array_key_exists("text", $tagData)) {
-            $replaced = preg_replace("/\{(.+)\}/", "<?php echo $1; ?>", $tagData['text']);
-            $newContent .= $replaced;
-        } else if (!$tagData['phpTag']) {
-            $contentData = preg_split("/\s/", $tagData['contents']);
-            $tag = array_shift($contentData);
-            $customTag = $tag !== strtolower($tag);
-
-            if ($customTag) {
-                $componentLocation = __DIR__ . "/components/$tag.php";
-                if (file_exists($componentLocation)) {
-                    $allFilesCompiled[] = $componentLocation;
-                }
-                if ($tagData['endTag']) {
-                    $newContent .= "<?php finishRender(\"$tag\"); ?>";
-                } else {
-                    $values = implode(" ", $contentData);
-
-                    $valueList = processValues($values);
-
-                    // now we need to process the values into a list
-
-                    $newContent .= "<?php startRender(\"$tag\"";
-                    if ($tagData['selfClosing']) {
-                        $newContent .= ", true";
-                    } else {
-                        $newContent .= ", false";
-                    }
-                    $newContent .= ", array(";
-                    if (count($valueList) > 0) {
-                        $newContent .= "\n";
-                        foreach ($valueList as $attr=>$value) {
-                            $newContent .= "\"$attr\" => $value,\n";
-                        }
-                    }
-                    $newContent .= ")); ?>";
-                }
-            } else {
-                if ($tagData['endTag']) {
-                    $newContent .= "</";
-                } else {
-                    $newContent .= "<";
-                }
-                $newContent .= $tagData['contents'];
-                if ($tagData['selfClosing']) {
-                    $newContent .= " />";
-                } else {
-                    $newContent .= " >";
-                }
-            }
-        } else {
-            $newContent .= "<" . $tagData['contents'] . "?>";
-        }
+    foreach ($tag_tree as $tag) {
+        $newContent .= buildFromTag($tag);
     }
 
     return $newContent;
@@ -263,9 +389,10 @@ foreach ($files as $file) {
     
     $newContent = convertContent($content);
 
+    $fileContent = "<?php\n$newContent\n?>";
     //print $newContent . "\n";
 
-    file_put_contents($fullNewName, $newContent);
+    file_put_contents($fullNewName, $fileContent);
     $allFilesCompiled[] = $fullNewName;
 }
 
@@ -290,8 +417,7 @@ if ($indexFile) {
         $header .= "\tinclude_once(\"$file\");\n";
     }
 
-    $header .= "?>\n";
-    $newContent = $header . $newContent;
+    $newContent = $header . "\n\t" . $newContent . "\n?>\n";
 
     file_put_contents($fullNewName, $newContent);
 }
