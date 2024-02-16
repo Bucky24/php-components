@@ -1,5 +1,5 @@
 <?php
-
+/*
 function startRender($tag, $selfClosing, $params) {
     $newParams = $params;
     $newParams['__end'] = false;
@@ -9,5 +9,9 @@ function startRender($tag, $selfClosing, $params) {
 function finishRender($tag) {
     $tag(array("__end" => true));
 }
+*/
 
+function startRender($html) {
+    print $html;
+}
 ?>

@@ -293,6 +293,7 @@ function buildTree($tags) {
 }
 
 function buildFromTag($tag, $levels = 1) {
+    if ($levels === null) $levels = 1;
     $indent = str_repeat("\t", $levels + 1);
     $endIndent = str_repeat("\t", $levels);
     if ($tag['type'] === 'tag') {
@@ -353,7 +354,7 @@ function buildFromTag($tag, $levels = 1) {
     throw new Error("Unhandled tag " . json_encode($tag, true));
 }
 
-function convertContent($content) {
+function convertContent($content, $level = null) {
     global $allFilesCompiled;
     //print "\nPrevious content:\n" . $content . "\n\n";
 
@@ -365,7 +366,7 @@ function convertContent($content) {
 
     $newContent = "";
     foreach ($tag_tree as $tag) {
-        $newContent .= buildFromTag($tag);
+        $newContent .= buildFromTag($tag, $level);
     }
 
     return $newContent;
@@ -407,7 +408,7 @@ if ($indexFile) {
     $newName = join(".", $fileNameArray) . ".php";
     $fullNewName = $buildDir . "/$newName";
     
-    $newContent = convertContent($content);
+    $newContent = convertContent($content, 2);
 
     $dir = __DIR__;
 
@@ -417,7 +418,7 @@ if ($indexFile) {
         $header .= "\tinclude_once(\"$file\");\n";
     }
 
-    $newContent = $header . "\n\t" . $newContent . "\n?>\n";
+    $newContent = $header . "\n\tstartRender(\n\t\t" . $newContent . "\n\t);\n?>\n";
 
     file_put_contents($fullNewName, $newContent);
 }
