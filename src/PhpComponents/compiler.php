@@ -241,7 +241,7 @@ function buildTree($tags) {
         if (!$top_of_stack) {
             if ($immediate_push) {
                 // self closing or non tag goes right on the tree
-                $tree[] =getStackData($tag);
+                $tree[] = getStackData($tag);
             } else {
                 debugLog("pushing onto stack as first element");
                 // otherwise push it onto the stack as the first element
@@ -313,7 +313,17 @@ function buildFromTag($tag, $levels = 1) {
 
             $valueList = processValues($values);
 
-            $newContent = "renderComponent(\n$indent\"{$tag['tag']}\"";
+            $isCustom = strtolower($tag['tag']) !== $tag['tag'];
+
+            $newContent = "";
+
+            if ($isCustom) {
+                $newContent .= "renderComponent(";
+            } else {
+                $newContent .= "renderTag(";
+            }
+
+            $newContent .= "\n$indent\"{$tag['tag']}\"";
             if ($tag['selfClosing']) {
                 $newContent .= ",\n$indent" . "true";
             } else {
@@ -413,6 +423,7 @@ if ($indexFile) {
     $dir = __DIR__;
 
     $header = "<?php\n\tinclude_once(\"$dir/base/loader.php\");\n";
+    $header .= "\tinclude_once(\"$dir/components/components.php\");\n";
 
     foreach ($allFilesCompiled as $file) {
         $header .= "\tinclude_once(\"$file\");\n";

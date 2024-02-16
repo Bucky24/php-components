@@ -5,7 +5,7 @@ function App() {
     ?>
         <Container key={$baz}>
             foo "foo"
-            <div>
+            <div style="margin-bottom: 10px;">
                 hi there
                 <div>there there</div>
             </div>
