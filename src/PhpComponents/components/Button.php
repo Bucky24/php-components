@@ -1,9 +1,9 @@
 <?php
 
 function Button($params) {
-    ?>
-        <button><?php echo $params['value']; ?></button>
-    <?php
+    return renderTag("button", false, array(), array(
+        $params['value']
+    ));
 }
 
 ?>

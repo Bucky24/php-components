@@ -356,7 +356,7 @@ function buildFromTag($tag, $levels = 1) {
             return $newContent;
         }
     } else if ($tag['type'] === 'text') {
-        $textHandled = str_replace("\"", "&dbquot;", $tag['text']);
+        $textHandled = str_replace("\"", "&quot;", $tag['text']);
         $textHandled = trim($textHandled);
         return "renderText(\"$textHandled\")";
     }
@@ -397,6 +397,7 @@ foreach ($files as $file) {
     
     $newName = join(".", $fileNameArray) . ".php";
     $fullNewName = $buildDir . "/$newName";
+    $relativeNewName = "./$newName";
     
     $newContent = convertContent($content);
 
@@ -404,7 +405,7 @@ foreach ($files as $file) {
     //print $newContent . "\n";
 
     file_put_contents($fullNewName, $fileContent);
-    $allFilesCompiled[] = $fullNewName;
+    $allFilesCompiled[] = $relativeNewName;
 }
 
 if ($indexFile) {

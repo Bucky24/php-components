@@ -30,12 +30,12 @@ function renderTag($tag, $selfClosing, $attributes, $children) {
         $childCode = "";
         foreach ($children as $child) {
             if (is_array($child)) {
-                $childCode .= implode("", $child);
+                $childCode .= implode("\n", $child) . "\n";
             } else {
-                $childCode .= $child;
+                $childCode .= $child . "\n";
             }
         }
-        $html .= ">$childCode</$tag>";
+        $html .= ">\n$childCode</$tag>";
     }
 
     return $html;
