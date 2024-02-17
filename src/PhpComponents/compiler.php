@@ -11,7 +11,9 @@ if (!array_key_exists("file", $options) && !array_key_exists("dir", $options)) {
 }
 
 if (!array_key_exists("buildDir", $options)) {
-    die("--buildDir parameter is required");
+    if (!array_key_exists("dir", $options)) {
+        die("--buildDir parameter is required when using --file");
+    }
 }
 
 $files = array();;
@@ -39,7 +41,15 @@ if (array_key_exists("dir", $options)) {
     }
 }
 
-$buildDir = $options['buildDir'];
+$buildDir = null;
+
+if (array_key_exists("buildDir", $options)) {
+    $buildDir = $options['buildDir'];
+} else {
+    // we assume we have a directory
+    $dir = $options['dir'];
+    $buildDir = dirname($dir) . "/build";
+}
 
 if (!file_exists($buildDir)) {
     mkdir($buildDir);
