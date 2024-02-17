@@ -34,7 +34,7 @@ if (array_key_exists("dir", $options)) {
         }
         $fileList = explode(".", $dirFile);
         $path = $fileList[count($fileList)-1];
-        if ($path !== "phpx") {
+        if ($path !== "phpx" && $path !== "html" && $path !== "css" && $path !== "js") {
             continue;
         }
         $files[] = $fullPath;
@@ -393,10 +393,21 @@ function convertContent($content, $level = null) {
 }
 
 $indexFile = null;
+$templateFile = null;
 $allFilesCompiled = array();
+$copyFiles = array();
 foreach ($files as $file) {
     if (strpos($file, "index.phpx") !== false) {
         $indexFile = $file;
+        continue;
+    }
+    if (strpos($file, "index.html") !== false) {
+        $templateFile = $file;
+        continue;
+    }
+
+    if (strpos($file, ".css") !== false || strpos($file, ".js") !== false) {
+        $copyFiles[] = $file;
         continue;
     }
     $content = file_get_contents($file);
@@ -420,9 +431,9 @@ foreach ($files as $file) {
 
 if ($indexFile) {
     // we need to add some crap in here
-    $content = file_get_contents($file);
+    $content = file_get_contents($indexFile);
 
-    $fileNameArray = explode(".", basename($file));
+    $fileNameArray = explode(".", basename($indexFile));
 
     unset($fileNameArray[count($fileNameArray)-1]);
     
@@ -442,7 +453,23 @@ if ($indexFile) {
 
     $newContent = $header . "\n\tstartRender(\n\t\t" . $newContent . "\n\t);\n?>\n";
 
+    if ($templateFile) {
+        $template_contents = file_get_contents($templateFile);
+        $newContent = str_replace("{{code}}", $newContent, $template_contents);
+    }
+
     file_put_contents($fullNewName, $newContent);
+}
+
+foreach ($copyFiles as $file) {
+    $dir = $options['dir'];
+    $path = str_replace($dir, "", $file);
+    $relativeNewName = ".$path";
+    $contents = file_get_contents($file);
+
+    $fullNewName = $buildDir . $path;
+
+    file_put_contents($fullNewName, $contents);
 }
 
 ?>
