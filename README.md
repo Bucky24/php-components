@@ -10,32 +10,40 @@ Thus, this project. This allows the creation of frontend component classes in PH
 
 ## How it works
 
-This library was inspired by React, so many of its functions are very React-like. You define components as functions. These functions can take in some props, as an array, and should print HTML directly.
+This library was inspired by React, so many of its functions are very React-like. You define components as functions. These functions can take in some props, as an array, and should contain HTML directly.
 
 Any tag that has capital letters in it is assumed to be a Component, and will be transpiled accordingly.
 
 ### Components
 
-In the example below, notice that there is an `__end` parameter. This is present in all `$params`, and indicates if this component should be ending itself because all its children have rendered, or if it's starting out.
+Components are functions that take in a $params. Like React, `children` will be a key in $params.
 
 Example:
 
 ```
+//CenteredComponent.phpx:
+
 <?php
 
-function CenteredContainer($params) {
-    if (!$params['__end']) {
-        ?>
-            <div style="display: flex; justify-content: center;">
-        <?php
-    } else {
-        ?>
-            </div>
-        <?php
-    }
-}
+function CenteredContainer($params) { ?>
+    <div style="display: flex; justify-content: center;">
+        <?php params['children']; ?>
+    </div>
+<?php }
 
 ?>
+
+// App.phpx
+
+<?php
+
+function App($params) { ?>
+    <CenteredComponent>
+        This will be centered text
+    </CenteredComponent>
+<?php }
+?>
+```
 
 ### Rendering the app
 
@@ -56,3 +64,9 @@ In order to transpile the phpx files into php files, you must run the compiler, 
 You can also compile files directly:
 
 `php ./vendor/bucky24/php-components/src/PhpComponents/compiler.php --file <name of phpx file> --buildDir <the build dir to output the .php file to>`
+
+### Other Special Files
+
+If an `index.html` is found in the build directory, the compiler will use that as a template for the resulting `index.php`.
+
+Any `.css` or `.js` files found in the directory will be copied to the build directory.
