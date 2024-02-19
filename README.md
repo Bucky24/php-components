@@ -12,7 +12,7 @@ Thus, this project. This allows the creation of frontend component classes in PH
 
 This library was inspired by React, so many of its functions are very React-like. You define components as functions. These functions can take in some props, as an array, and should contain HTML directly.
 
-Any tag that has capital letters in it is assumed to be a Component, and will be transpiled accordingly.
+Any tag that has capital letters in it is assumed to be a Component, and will be transpiled accordingly. Any other tag is treated as a browser-default tag.
 
 ### Components
 
@@ -61,12 +61,18 @@ In order to transpile the phpx files into php files, you must run the compiler, 
 
 `php ./vendor/bucky24/php-components/src/PhpComponents/compiler.php --dir <directory of the code> --buildDir <the build dir to output the .php file to>`
 
+If you leave out the buildDir, then it will be created as a sibling of the code directory.
+
 You can also compile files directly:
 
 `php ./vendor/bucky24/php-components/src/PhpComponents/compiler.php --file <name of phpx file> --buildDir <the build dir to output the .php file to>`
 
+#### Hot Reloading
+
+PHP does not have a great file watcher, so there is a Node.js script for that purpose, located in `src/PhpComponents/utils/watcher.js`. It takes a single argument, that being a directory to watch.
+
 ### Other Special Files
 
-If an `index.html` is found in the build directory, the compiler will use that as a template for the resulting `index.php`.
+If an `index.html` is found in the src directory, the compiler will use that as a template for the resulting `index.php`. Use `{{code}}` to indicate where the compiled results from `index.phpx` should go.
 
 Any `.css` or `.js` files found in the directory will be copied to the build directory.
