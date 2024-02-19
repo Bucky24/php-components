@@ -23,21 +23,30 @@ if (array_key_exists("file", $options)) {
 
 if (array_key_exists("dir", $options)) {
     $dir = $options['dir'];
-    print("Getting files from $dir\n");
 
-    $dirFiles = scandir($dir);
-    //print_r($dirFiles);
-    foreach ($dirFiles as $dirFile) {
-        $fullPath = $dir . "/" . $dirFile;
-        if (is_dir($fullPath)) {
-            continue;
+    $queue = array($dir);
+
+    while (count($queue) > 0) {
+        $dir = array_shift($queue);
+        $dirFiles = scandir($dir);
+        print("Getting files from $dir\n");
+        //print_r($dirFiles);
+        foreach ($dirFiles as $dirFile) {
+            if ($dirFile === "." || $dirFile === "..") {
+                continue;
+            }
+            $fullPath = $dir . "/" . $dirFile;
+            if (is_dir($fullPath)) {
+                $queue[] = $fullPath;
+                continue;
+            }
+            $fileList = explode(".", $dirFile);
+            $path = $fileList[count($fileList)-1];
+            if ($path !== "phpx" && $path !== "html" && $path !== "css" && $path !== "js") {
+                continue;
+            }
+            $files[] = $fullPath;
         }
-        $fileList = explode(".", $dirFile);
-        $path = $fileList[count($fileList)-1];
-        if ($path !== "phpx" && $path !== "html" && $path !== "css" && $path !== "js") {
-            continue;
-        }
-        $files[] = $fullPath;
     }
 }
 
