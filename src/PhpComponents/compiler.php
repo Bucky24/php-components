@@ -16,6 +16,8 @@ if (!array_key_exists("buildDir", $options)) {
     }
 }
 
+print "Compiling project!\n";
+
 $files = array();;
 if (array_key_exists("file", $options)) {
     $files[] = $options['file'];
@@ -480,5 +482,7 @@ foreach ($copyFiles as $file) {
 
     file_put_contents($fullNewName, $contents);
 }
+
+print "Complete!\n";
 
 ?>

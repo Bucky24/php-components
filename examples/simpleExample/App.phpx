@@ -4,7 +4,7 @@ function App() {
     $baz = "boo";
     ?>
         <Container key={$baz}>
-            foo "foo"
+            foo "foo" bar ba
             <div style="margin-bottom: 10px;">
                 hi there
                 <div>there there</div>
