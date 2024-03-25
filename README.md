@@ -27,7 +27,7 @@ Example:
 
 function CenteredContainer($params) { ?>
     <div style="display: flex; justify-content: center;">
-        <?php params['children']; ?>
+        <?php $params['children']; ?>
     </div>
 <?php }
 
