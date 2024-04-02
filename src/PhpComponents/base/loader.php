@@ -24,6 +24,16 @@ function renderComponent($component, $selfClosing, $attributes, $children) {
 function renderTag($tag, $selfClosing, $attributes, $children) {
     $html = "<$tag";
 
+    $attr_strings = array();
+    foreach ($attributes as $key=>$value) {
+        // we will need to do more work here eventually
+        $str = "$key=\"$value\"";
+
+        $attr_strings[] = $str;
+    }
+
+    $html .= " " . implode(" ", $attr_strings);
+
     if ($selfClosing) {
         $html .= " />";
     } else {
