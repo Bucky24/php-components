@@ -14,7 +14,7 @@ To install:
 
 ```
 composer config repositories.php-components git https://github.com/Bucky24/php-components.git
-composer require bucky24/php-components:0.1.4 (or latest version)
+composer require bucky24/php-components:0.1.5 (or latest version)
 ```
 
 ## How it works

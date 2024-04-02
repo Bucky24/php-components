@@ -1,0 +1,11 @@
+<?php
+
+function Foo() {
+    ?><div>blah</div><?php
+    
+    $thing = $someInstance->method(array(
+        "key" => $value,
+    ));
+}
+
+?>

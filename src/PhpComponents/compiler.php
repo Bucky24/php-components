@@ -142,6 +142,7 @@ function processValues($values) {
 function generateTags($content) {
     $tags = array();
     $inTag = false;
+    $inPhpTag = false;
     $tagBuffer = "";
     for ($i=0;$i<strlen($content);$i+=1) {
         $char = substr($content, $i, 1);
@@ -162,11 +163,24 @@ function generateTags($content) {
             //print $char;
         //}
 
+        if ($char === "?") {
+            debugLog("Found a question mark! buffer is $tagBuffer");
+            if ($tagBuffer === "<?") {
+                $inPhpTag = true;
+            }
+        }
+
         if ($char === '>') {
-            //print "Tag is $tagBuffer\n";
-            $selfClosing = substr($tagBuffer, strlen($tagBuffer)-2, 1) === '/';
+            debugLog("We found a >. Tag is $tagBuffer. Are we already inside php tag? " . var_export($inPhpTag, true));
+            $lastChar = substr($tagBuffer, strlen($tagBuffer)-2, 1);
+            $selfClosing = $lastChar === '/';
             $endTag = substr($tagBuffer, 1, 1) === '/';
             $phpTag = substr($tagBuffer, 1, 1) === '?';
+
+            if ($inPhpTag && $lastChar !== "?") {
+                // in this case we just got a > for some non-tag related reason. You can ignore it.
+                continue;
+            }
 
             $end = strlen($tagBuffer)-2;
             $start = 1;
@@ -195,6 +209,7 @@ function generateTags($content) {
 
             $tagBuffer = "";
             $inTag = false;
+            $inPhpTag = false;
         }
     }
 
@@ -421,6 +436,8 @@ foreach ($files as $file) {
         $copyFiles[] = $file;
         continue;
     }
+
+    debugLog("Processing $file");
     $content = file_get_contents($file);
 
     $fileNameArray = explode(".", basename($file));
