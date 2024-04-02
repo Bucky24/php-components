@@ -83,7 +83,7 @@ function processValue($value) {
 function processValues($values) {
     $result = array();
 
-    //print("processing " . $values . "\n");
+    debugLog("processing values " . $values . "\n");
 
     $name = "";
     $gettingTag = false;
@@ -96,7 +96,7 @@ function processValues($values) {
 
         if (!$gettingTag) {
             if (!isCharWhitespace($char)) {
-                //print("getting tag now\n");
+                debugLog("getting tag now, non whitespace char");
                 $name .= $char;
                 $gettingTag = true;
                 $hasName = false;
@@ -107,13 +107,13 @@ function processValues($values) {
         } else if (!$hasName) {
             if ($char === "=") {
                 $hasName = true;
-                //print "got name $name\n";
+                debugLog("got attribute name $name");
             } else {
                 $name .= $char;
             }
         } else {
             if (isCharWhitespace($char) && !$inQuote && !$inBrackets) {
-                //print("got it " . $name . " " . $body . "\n");
+                debugLog("got attribute of " . $name . " " . $body . "\n");
                 $result[$name] = processValue($body);
                 $gettingTag = false;
             } else if ($char === "\"") {
@@ -132,6 +132,7 @@ function processValues($values) {
     }
 
     if ($gettingTag && $hasName) {
+        debugLog("after-processing got attribute of $name and $body");
         $result[$name] = processValue($body);
     }
 
@@ -229,7 +230,7 @@ function debugLog_r($obj) {
     global $DO_LOG;
 
     if ($DO_LOG) {
-        print_r($message);
+        print_r($obj);
     }
 }
 
@@ -329,6 +330,8 @@ function buildFromTag($tag, $levels = 1) {
             array_shift($contentData);
             $values = implode(" ", $contentData);
 
+            debugLog("Processing values of " . var_export($values, true));
+
             $valueList = processValues($values);
 
             $isCustom = strtolower($tag['tag']) !== $tag['tag'];
@@ -348,7 +351,7 @@ function buildFromTag($tag, $levels = 1) {
                 $newContent .= ",\n$indent" . "false";
             }
             $newContent .= ",\n$indent" . "array(";
-            if (count($valueList) > 1) {
+            if (count($valueList) > 0) {
                 $newContent .= "\n";
                 foreach ($valueList as $attr=>$value) {
                     $newContent .= "$indent\t\"$attr\" => $value,\n";
