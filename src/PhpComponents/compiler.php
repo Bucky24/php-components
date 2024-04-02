@@ -44,9 +44,6 @@ if (array_key_exists("dir", $options)) {
             }
             $fileList = explode(".", $dirFile);
             $path = $fileList[count($fileList)-1];
-            if ($path !== "phpx" && $path !== "html" && $path !== "css" && $path !== "js" && $path !== "php") {
-                continue;
-            }
             $files[] = $fullPath;
         }
     }
@@ -417,14 +414,7 @@ foreach ($files as $file) {
         continue;
     }
 
-    if (
-        strpos($file, ".css") !== false ||
-        strpos($file, ".js") !== false ||
-        (
-            strpos($file, ".php") !== false &&
-            strpos($file, ".phpx") === false
-        )
-    ) {
+    if (strpos($file, ".phpx") === false) {
         $copyFiles[] = $file;
         continue;
     }
