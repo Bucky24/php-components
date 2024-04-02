@@ -1,6 +1,10 @@
 {
     "name": "bucky24/php-components",
     "type": "library",
+    "version": "0.1.0",
+    "require": {
+        "php": ">=7.0"
+    },
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -15,6 +19,5 @@
             "name": "Bucky24",
             "email": "rwijtman@gmail.com"
         }
-    ],
-    "require": {}
+    ]
 }

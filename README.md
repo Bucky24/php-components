@@ -8,6 +8,15 @@ I work very heavily in both PHP server backends and JavaScript based frontends. 
 
 Thus, this project. This allows the creation of frontend component classes in PHP and wrapping JSX code inside of those components.
 
+## Installation
+
+To install:
+
+```
+composer config repositories.php-components git https://github.com/Bucky24/php-components.git
+composer require bucky24/php-componentss:0.1.0 (or latest version)
+```
+
 ## How it works
 
 This library was inspired by React, so many of its functions are very React-like. You define components as functions. These functions can take in some props, as an array, and should contain HTML directly.
