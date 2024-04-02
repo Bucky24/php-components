@@ -78,7 +78,7 @@ You can also compile files directly:
 
 #### Hot Reloading
 
-PHP does not have a great file watcher, so there is a Node.js script for that purpose, located in `src/PhpComponents/utils/watcher.js`. It takes a single argument, that being a directory to watch.
+PHP does not have a great file watcher, so there is a Node.js script for that purpose, located in `vendor/bucky24/php-components/src/PhpComponents/utils/watcher.js`. It takes a single argument, that being a directory to watch.
 
 ### Other Special Files
 

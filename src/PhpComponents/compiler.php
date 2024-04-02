@@ -44,7 +44,7 @@ if (array_key_exists("dir", $options)) {
             }
             $fileList = explode(".", $dirFile);
             $path = $fileList[count($fileList)-1];
-            if ($path !== "phpx" && $path !== "html" && $path !== "css" && $path !== "js") {
+            if ($path !== "phpx" && $path !== "html" && $path !== "css" && $path !== "js" && $path !== "php") {
                 continue;
             }
             $files[] = $fullPath;
@@ -417,18 +417,31 @@ foreach ($files as $file) {
         continue;
     }
 
-    if (strpos($file, ".css") !== false || strpos($file, ".js") !== false) {
+    if (
+        strpos($file, ".css") !== false ||
+        strpos($file, ".js") !== false ||
+        (
+            strpos($file, ".php") !== false &&
+            strpos($file, ".phpx") === false
+        )
+    ) {
         $copyFiles[] = $file;
         continue;
     }
     $content = file_get_contents($file);
 
     $fileNameArray = explode(".", basename($file));
+    $fileDirectory = dirname($file);
+    $fileDirectoryRelative = str_replace($dir . "/", "", $fileDirectory);
 
     unset($fileNameArray[count($fileNameArray)-1]);
     
     $newName = join(".", $fileNameArray) . ".php";
-    $fullNewName = $buildDir . "/$newName";
+    if ($fileDirectoryRelative !== "") {
+        $fullNewName = $buildDir . "/$fileDirectoryRelative/$newName";
+    } else {
+        $fullNewName = $buildDir . "/$newName";
+    }
     $relativeNewName = "./$newName";
     
     $newContent = convertContent($content);
@@ -436,6 +449,10 @@ foreach ($files as $file) {
     $fileContent = "<?php\n$newContent\n?>";
     //print $newContent . "\n";
 
+    $finalDir = dirname($fullNewName);
+    if (!file_exists($finalDir)) {
+        mkdir($finalDir, 0777, true);
+    }
     file_put_contents($fullNewName, $fileContent);
     $allFilesCompiled[] = $relativeNewName;
 }
@@ -480,6 +497,10 @@ foreach ($copyFiles as $file) {
 
     $fullNewName = $buildDir . $path;
 
+    $dir = dirname($fullNewName);
+    if (!file_exists($dir)) {
+        mkdir($dir, 0777, true);
+    }
     file_put_contents($fullNewName, $contents);
 }
 
