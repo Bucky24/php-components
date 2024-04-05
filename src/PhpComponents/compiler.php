@@ -1,6 +1,6 @@
 <?php
 
-$DO_LOG = true;
+$DO_LOG = false;
 
 $options = getopt("", array(
     "file:",
