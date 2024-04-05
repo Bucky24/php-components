@@ -1,5 +1,7 @@
 <?php
 
+$DO_LOG = true;
+
 $options = getopt("", array(
     "file:",
     "dir:",
@@ -231,8 +233,6 @@ function getStackData($tag) {
     }
 }
 
-$DO_LOG = false;
-
 function debugLog($message) {
     global $DO_LOG;
 
@@ -386,7 +386,8 @@ function buildFromTag($tag, $levels = 1) {
             $newContent .= "\n$endIndent)";
 
             if ($levels === 1) {
-                $newContent = "return $newContent;";
+                // the final output to the rest of the program
+                $newContent = "$newContent;";
             }
 
             return $newContent;
@@ -443,16 +444,20 @@ foreach ($files as $file) {
     $fileNameArray = explode(".", basename($file));
     $fileDirectory = dirname($file);
     $fileDirectoryRelative = str_replace($dir . "/", "", $fileDirectory);
+    if ($fileDirectory === $dir) {
+        $fileDirectoryRelative = "";
+    }
 
     unset($fileNameArray[count($fileNameArray)-1]);
     
     $newName = join(".", $fileNameArray) . ".php";
     if ($fileDirectoryRelative !== "") {
         $fullNewName = $buildDir . "/$fileDirectoryRelative/$newName";
+        $relativeNewName = "./$fileDirectoryRelative/$newName";
     } else {
         $fullNewName = $buildDir . "/$newName";
+        $relativeNewName = "./$newName";
     }
-    $relativeNewName = "./$newName";
     
     $newContent = convertContent($content);
 
@@ -463,6 +468,7 @@ foreach ($files as $file) {
     if (!file_exists($finalDir)) {
         mkdir($finalDir, 0777, true);
     }
+    debugLog("Writing to $fullNewName, which comes from the relative directory of $fileDirectoryRelative (our dir is $dir and file directory is $fileDirectory)");
     file_put_contents($fullNewName, $fileContent);
     $allFilesCompiled[] = $relativeNewName;
 }

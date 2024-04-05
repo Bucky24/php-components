@@ -2,7 +2,7 @@
 
 function App() {
     $baz = "boo";
-    ?>
+    return ?>
         <Container key={$baz}>
             foo "foo" bar ba
             <div style="margin-bottom: 10px;">

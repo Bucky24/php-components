@@ -1,6 +1,7 @@
 <?php
 
-function Container($params) { ?>
+function Container($params) {
+    return ?>
     <div style="display: flex; flex-direction: center; align-items: center; width: 100%; height: 100%">
         <?php $params['children'] ?>
     </div>

@@ -34,11 +34,13 @@ Example:
 
 <?php
 
-function CenteredContainer($params) { ?>
-    <div style="display: flex; justify-content: center;">
-        <?php $params['children']; ?>
-    </div>
-<?php }
+function CenteredContainer($params) {
+    return ?>
+        <div style="display: flex; justify-content: center;">
+            <?php $params['children']; ?>
+        </div>
+    <?php 
+}
 
 ?>
 
@@ -46,11 +48,13 @@ function CenteredContainer($params) { ?>
 
 <?php
 
-function App($params) { ?>
-    <CenteredComponent>
-        This will be centered text
-    </CenteredComponent>
-<?php }
+function App($params) {
+    return ?>
+        <CenteredComponent>
+            This will be centered text
+        </CenteredComponent>
+    <?php
+}
 ?>
 ```
 
